@@ -29,7 +29,7 @@ StopExecution = StopExecutionType()
 
 class TestSuiteOperators(object):
   
-  def issame(self, code, expects, scope={}, tags="equals"):
+  def issame(self, code, expects, scope={}, tags="issame"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -40,7 +40,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def notsame(self, code, expects, scope={}, tags="equals"):
+  def notsame(self, code, expects, scope={}, tags="notsame"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -62,7 +62,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def ne(self, code, expects, scope={}, tags="equals"):
+  def ne(self, code, expects, scope={}, tags="not-equals"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -73,7 +73,51 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def contains(self, code, expects, scope={}, tags="equals"):
+  def lt(self, code, expects, scope={}, tags="less-than"):
+    success, error = False, None
+    try:
+      result = eval(code, self.scope, scope)
+      success = result < expects
+    except Exception as e:
+      #print(e)
+      #traceback.print_exc(file=sys.stdout)
+      result = error = e
+    return self._test((success, error, result), code, expects, scope, tags)
+  
+  def le(self, code, expects, scope={}, tags="less-than-equal"):
+    success, error = False, None
+    try:
+      result = eval(code, self.scope, scope)
+      success = result <= expects
+    except Exception as e:
+      #print(e)
+      #traceback.print_exc(file=sys.stdout)
+      result = error = e
+    return self._test((success, error, result), code, expects, scope, tags)
+  
+  def lt(self, code, expects, scope={}, tags="greater-than"):
+    success, error = False, None
+    try:
+      result = eval(code, self.scope, scope)
+      success = result > expects
+    except Exception as e:
+      #print(e)
+      #traceback.print_exc(file=sys.stdout)
+      result = error = e
+    return self._test((success, error, result), code, expects, scope, tags)
+  
+  def ge(self, code, expects, scope={}, tags="greater-than-equal"):
+    success, error = False, None
+    try:
+      result = eval(code, self.scope, scope)
+      success = result >= expects
+    except Exception as e:
+      #print(e)
+      #traceback.print_exc(file=sys.stdout)
+      result = error = e
+    return self._test((success, error, result), code, expects, scope, tags)
+  
+  def contains(self, code, expects, scope={}, tags="contains"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -84,7 +128,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def containsnot(self, code, expects, scope={}, tags="equals"):
+  def notcontains(self, code, expects, scope={}, tags="not-contains"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -95,7 +139,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def has(self, code, expects, scope={}, tags="equals"):
+  def has(self, code, expects, scope={}, tags="has"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -106,7 +150,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def hasnot(self, code, expects, scope={}, tags="equals"):
+  def nothas(self, code, expects, scope={}, tags="not-has"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -117,7 +161,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def instance(self, code, expects, scope={}, tags="equals"):
+  def instance(self, code, expects, scope={}, tags="instanceof"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -128,7 +172,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def notinstance(self, code, expects, scope={}, tags="equals"):
+  def notinstance(self, code, expects, scope={}, tags="not-instanceof"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -139,7 +183,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def subclass(self, code, expects, scope={}, tags="equals"):
+  def subclass(self, code, expects, scope={}, tags="subclassof"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -150,7 +194,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def notsubclass(self, code, expects, scope={}, tags="equals"):
+  def notsubclass(self, code, expects, scope={}, tags="not-subclassof"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -161,7 +205,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def catch(self, code, expects, scope={}, tags="equals"):
+  def catch(self, code, expects, scope={}, tags="catches"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -172,7 +216,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def true(self, code, expects=None, scope={}, tags="equals"):
+  def true(self, code, expects=None, scope={}, tags="is-true"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -183,7 +227,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def false(self, code, expects=None, scope={}, tags="equals"):
+  def false(self, code, expects=None, scope={}, tags="is-false"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
