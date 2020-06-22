@@ -27,6 +27,44 @@ class StopExecutionType:
 StopExecution = StopExecutionType()
 
 
+class LRUStack(list):
+  
+  maxsize   = None
+  
+  def __init__(self, initializer=None, maxsize=100):
+    self.maxsize = maxsize
+    if initializer is None:
+      super().__init__()
+    else:
+      super().__init__(initializer)
+  
+  def __trunc__(self):
+    if self.maxsize is None:
+      return
+    while len(self) > self.maxsize:
+      self.pop(0)
+  
+  def __imul__(self, value):
+    super().__imul__(value)
+    self.__trunc__()
+  
+  def __iadd__(self, key, values):
+    super().__iadd__(value)
+    self.__trunc__()
+  
+  def append(self, value):
+    super().append(value)
+    self.__trunc__()
+  
+  def insert(self, key, value):
+    super().insert(key, value)
+    self.__trunc__()
+  
+  def extend(self, iterable):
+    super().extend(iterable)
+    self.__trunc__()
+
+
 class TestSuiteOperators(object):
   
   def issame(self, code, expects, scope={}, tags="issame"):
@@ -95,7 +133,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def lt(self, code, expects, scope={}, tags="greater-than"):
+  def gt(self, code, expects, scope={}, tags="greater-than"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -243,13 +281,23 @@ TestSuiteOperators.equals = TestSuiteOperators.eq
 
 class TestSuite(TestSuiteOperators):
   
+  @staticmethod
+  @property
+  def Operators():
+    return TestSuiteOperators
+  
+  _runs = None
+  
+  @property
+  def runs(self):
+    return self._runs
+   
   name = None
   tests = None
   scope = None
   parent = None
   traceback = None
   children = None
-  runs = None
   passes = None
   failures = None
   exceptions = None
@@ -287,7 +335,8 @@ class TestSuite(TestSuiteOperators):
       , passed=None, error=None):
     pass
   
-  def __init__(self, name, *tests, scope=None, parent=None, traceback=None):
+  def __init__(self, name, *tests, scope=None, parent=None, traceback=None
+      , runsize=100):
     self.name = tag_clean(name)
     self.tags = seq_unique(parent.tags+(self.name,)) if parent else (self.name,)
     self.tests = list(tests)
@@ -295,7 +344,7 @@ class TestSuite(TestSuiteOperators):
     self.parent = parent
     self.traceback = traceback
     self.children = []
-    self.runs = []
+    self._runs = LRUStack(maxsize=runsize)
     self.passes = 0
     self.fails = 0
     self.excepts = 0
@@ -313,10 +362,14 @@ class TestSuite(TestSuiteOperators):
     self.runs = []
   
   def query_runs(self, uid, *tags, **kwfilter):
-    tags = set(tags)
-    return tuple(run for run in self.runs if (uid is None or uid == run['uid']) \
-        and (not tags or tags.intersection(run['tags'])) \
-        and all(k in run and run[k] == v for (k,v) in kwfilter.items))
+    tags, run = set(tags), None
+    try:
+      return tuple(run for run in self.runs if (uid is None or uid == run['uid']) \
+          and (not tags or tags.intersection(run['tags'])) \
+          and all(k in run and run[k] == v for (k,v) in kwfilter.items()))
+    except Exception as e:
+      print(uid, tags, kwfilter, run)
+      raise e
   
   def get_last_run(self):
     last_run = self.query_runs(self.last_uid)
@@ -327,7 +380,7 @@ class TestSuite(TestSuiteOperators):
       self.children.append( child )
   
   def add_test(self, methodname, args, kwargs={}):
-    if hasattr(TestSuiteOperators, methodname):
+    if hasattr(self.__class__.Operators, methodname):
       raise ValueError("Unsupported methodname {:s}".format(repr(methodname)))
     self.tests.append( (methodname, args, kwargs) )
     return self
