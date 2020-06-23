@@ -9,7 +9,7 @@ A pdq python test suite
 >>> 
 >>> test_suite = pdq.WriterTestSuite("root")
 >>> 
->>> ts = pdq.WriterTestSuite("operations", parent=test_suite)
+>>> ts = pdq.WriterTestSuite("operations", parent=test_suite, verbosity=4)
 >>> 
 >>> assert ts.equals("4", 4), ts.get_last_run()
 >>> assert ts.equals("'four'", "four"), ts.get_last_run()
@@ -53,7 +53,8 @@ A pdq python test suite
 >>> assert ts.truish("57"), ts.get_last_run()
 >>> assert ts.nottruish("None"), ts.get_last_run()
 >>> 
->>> assert ts.catch("1/0", ZeroDivisionError("division by zero")), ts.get_last_run()
+>>> assert ts.throws("1/0", ZeroDivisionError("division by zero")), ts.get_last_run()
+>>> 
 >>> 
 >>> ts = pdq.WriterTestSuite("setup-and-run", parent=test_suite)
 >>> 
@@ -64,42 +65,42 @@ A pdq python test suite
 >>> ts.equals("()", ())
 >>> ts.equals("None", None)
 >>> 
->>> ts.ne("4", 5)
->>> ts.ne("5.0", 6)
+>>> ts.add("ne", "4", 5)
+>>> ts.add("ne", "5.0", 6)
 >>> 
->>> ts.lt("'a'", 'b')
->>> ts.lt("False", True)
+>>> ts.add("lt", "'a'", 'b')
+>>> ts.add("lt", "False", True)
 >>> 
->>> ts.ge("'a'", '_')
->>> ts.ge("7", 7)
+>>> ts.add("ge", "'a'", '_')
+>>> ts.add("ge", "7", 7)
 >>> 
->>> ts.gt("'a'", '_')
->>> ts.gt("7", 5)
+>>> ts.add("gt", "'a'", '_')
+>>> ts.add("gt", "7", 5)
 >>> 
->>> ts.le("'a'", 'a')
->>> ts.le("4", 5)
+>>> ts.add("le", "'a'", 'a')
+>>> ts.add("le", "4", 5)
 >>> 
->>> ts.issame("None", None)
->>> ts.issame("type(1)", int)
+>>> ts.add("issame", "None", None)
+>>> ts.add("issame", "type(1)", int)
 >>> 
->>> ts.notsame("None", False)
->>> ts.notsame("type(1.0)", int)
+>>> ts.add("notsame", "None", False)
+>>> ts.add("notsame", "type(1.0)", int)
 >>> 
->>> ts.contains("(1,2,3)", 2)
->>> ts.has("2", (1,2,3))
->>> ts.notcontains("(1,2,3)", 4)
->>> ts.nothas("5", (1,2,3))
+>>> ts.add("contains", "(1,2,3)", 2)
+>>> ts.add("has", "2", (1,2,3))
+>>> ts.add("notcontains", "(1,2,3)", 4)
+>>> ts.add("nothas", "5", (1,2,3))
 >>> 
->>> ts.instance("5", int)
->>> ts.notinstance("5", float)
+>>> ts.add("instance", "5", int)
+>>> ts.add("notinstance", "5", float)
 >>> 
->>> ts.subclass("int", object)
->>> ts.notsubclass("float", type)
+>>> ts.add("subclass", "int", object)
+>>> ts.add("notsubclass", "float", type)
 >>> 
->>> ts.truish("57")
->>> ts.nottruish("None")
+>>> ts.add("truish", "57", )
+>>> ts.add("nottruish", "None", )
 >>> 
->>> ts.catch("1/0", ZeroDivisionError("division by zero"))
+>>> ts.add("throws", "1/0", ZeroDivisionError("division by zero"))
 >>> 
 >>> test_suite.run_tests()
 >>> test_suite.summary()
@@ -112,10 +113,10 @@ Summary for root
       [PASS] 31/31
       [FAIL] 0/31
       [ERR]  1/31
-      with 0 children
+      no children
     Summary for setup-and-run
       [PASS] 31/31
       [FAIL] 0/31
       [ERR]  1/31
-      with 0 children
+      no children
 ```
