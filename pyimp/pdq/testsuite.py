@@ -28,10 +28,7 @@ def str_timestamp(epoch):
 str_duration = lambda t: "{:8.4f}s".format(t)
 
 
-class StopExecutionType:
-  pass
-
-StopExecution = StopExecutionType()
+StopExecution = type("StopExecutionType", (), {})()
 
 
 class LRUStack(list):
@@ -367,7 +364,7 @@ class TestSuite(TestSuiteOperators):
   children = None
   passes = None
   failures = None
-  exceptions = None
+  excepts = None
   test = None
   
   @property
@@ -377,6 +374,21 @@ class TestSuite(TestSuiteOperators):
   @property
   def now(self):
     return time.time()
+  
+  @property
+  def totals(self):
+    passed = self.passes or 0
+    failed = self.failures or 0
+    errors = self.excepts or 0
+    count = self.count or 0
+    if self.children:
+      for child in self.children:
+        ttls = child.totals
+        passed += ttls[0] or 0
+        failed += ttls[1] or 0
+        errors += ttls[2] or 0
+        count  += ttls[3] or 0
+    return ( passed, failed, errors, count )
   
   def _test(self, ser, code, expects, scope, tags, tstamp=0, duration=0):
     success, error, result = ser
@@ -443,6 +455,10 @@ class TestSuite(TestSuiteOperators):
     last_run = self.query_runs(self.last_uid)
     return last_run and last_run[0] or None
   
+  def unregister(self, child):
+    if child in self.children:
+      self.children.remove(child)
+  
   def register(self, child):
     if child not in self.children:
       self.children.append( child )
@@ -471,6 +487,21 @@ class TestSuite(TestSuiteOperators):
     self.summary()
     self.clear_runs()
   
+  def teardown(self, also_children=True):
+    if also_children:
+      for child in self.children:
+        child.teardown(also_children)
+        self.unregister(child)
+    self.clear_runs()
+    self.tests = None
+    self.scope = None
+    self.parent = None
+    self.children = None
+    self.passes = 0
+    self.fails = 0
+    self.excepts = 0
+    self.count = 0
+  
   def clear_runs(self, also_children=True):
     if also_children:
       for child in self.children:
@@ -488,12 +519,19 @@ class TestSuite(TestSuiteOperators):
   def summary(self, also_children=True, indent=""):
     print("{:s}Summary for {:s}".format(indent, self.name))
     indent += "  "
-    print("{:s}[PASS] {:d}/{:d}".format(indent, self.passes, self.count))
-    print("{:s}[FAIL] {:d}/{:d}".format(indent, self.fails, self.count))
-    print("{:s}[ERR]  {:d}/{:d}".format(indent, self.excepts, self.count))
     if len(self.children):
+      passes, fails, errors, count = self.totals
+      print("{:s}[PASS] this {:d}/{:d}, total {:d}/{:d}" \
+          .format(indent, self.passes, self.count, passes, count))
+      print("{:s}[FAIL] this {:d}/{:d}, total {:d}/{:d}" \
+          .format(indent, self.fails, self.count, fails, count))
+      print("{:s}[ERR]  this {:d}/{:d}, total {:d}/{:d}" \
+          .format(indent, self.excepts, self.count, errors, count))
       print("{:s}with {:d} children".format(indent, len(self.children)))
     else:
+      print("{:s}[PASS] {:d}/{:d}".format(indent, self.passes, self.count))
+      print("{:s}[FAIL] {:d}/{:d}".format(indent, self.fails, self.count))
+      print("{:s}[ERR]  {:d}/{:d}".format(indent, self.excepts, self.count))
       print("{:s}no children".format(indent))
     indent += "  "
     for child in self.children:

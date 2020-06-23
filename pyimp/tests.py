@@ -4,7 +4,7 @@ import pdq
 
 test_suite = pdq.WriterTestSuite("root")
 
-ts = pdq.WriterTestSuite("operations", parent=test_suite, verbosity=4)
+ts = pdq.WriterTestSuite("using-assert", parent=test_suite, verbosity=4)
 
 assert ts.equals("4", 4), ts.get_last_run()
 assert ts.equals("'four'", "four"), ts.get_last_run()
