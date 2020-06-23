@@ -1,8 +1,8 @@
 
-import sys, os, io, re, traceback
+import sys, os, io, re, time, traceback
 from functools import reduce
 from collections import defaultdict
-
+from collections.abc import Iterable, Sequence
 
 UNIQUE_ID = 0
 
@@ -20,6 +20,12 @@ tag_clean = lambda tag: \
     regex1.sub('-', regex0.sub('', tag.strip('- \n').lower()))
 tags_split = lambda tags, more=(): seq_unique(tuple(tag_clean(tag) for tag in \
     (tag.strip() for tag in tags.split(' ') if tag.strip())) + more)
+
+def str_timestamp(epoch):
+  tt = time.gmtime(epoch)
+  return "{:s}:{:07.4f}+00".format(time.strftime("%Y-%M-%e:%H:%M", tt), epoch%60)
+
+str_duration = lambda t: "{:8.4f}s".format(t)
 
 
 class StopExecutionType:
@@ -70,6 +76,7 @@ class TestSuiteOperators(object):
   
   def issame(self, code, expects, scope={}, tags="issame"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result is expects
@@ -77,10 +84,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def notsame(self, code, expects, scope={}, tags="notsame"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result is not expects
@@ -88,11 +97,13 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def eq(self, code, expects, scope={}, tags="equals"):
     success, error = False, None
     #print("eq", code, expects, scope, tags)
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result == expects
@@ -100,10 +111,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def ne(self, code, expects, scope={}, tags="not-equals"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result != expects
@@ -111,10 +124,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def lt(self, code, expects, scope={}, tags="less-than"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result < expects
@@ -122,10 +137,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def le(self, code, expects, scope={}, tags="less-than-equal"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result <= expects
@@ -133,10 +150,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def gt(self, code, expects, scope={}, tags="greater-than"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result > expects
@@ -144,10 +163,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def ge(self, code, expects, scope={}, tags="greater-than-equal"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result >= expects
@@ -155,10 +176,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def contains(self, code, expects, scope={}, tags="contains"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = expects in result
@@ -166,10 +189,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def notcontains(self, code, expects, scope={}, tags="not-contains"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = expects not in result
@@ -177,10 +202,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def has(self, code, expects, scope={}, tags="has"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result in expects
@@ -188,10 +215,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def nothas(self, code, expects, scope={}, tags="not-has"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = result not in expects
@@ -199,10 +228,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def instance(self, code, expects, scope={}, tags="instanceof"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = isinstance(result, expects)
@@ -210,10 +241,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def notinstance(self, code, expects, scope={}, tags="not-instanceof"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = not isinstance(result, expects)
@@ -221,10 +254,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def subclass(self, code, expects, scope={}, tags="subclassof"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = issubclass(result, expects)
@@ -232,10 +267,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def notsubclass(self, code, expects, scope={}, tags="not-subclassof"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = not issubclass(result, expects)
@@ -243,10 +280,20 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
-  def catch(self, code, expects, scope={}, tags="catches"):
+  #TODO: Implement
+  def catches(self, code, expects, scope={}, tags="catches"):
+    pass
+  
+  #TODO: Implement
+  def notcatches(self, code, expects, scope={}, tags="catches"):
+    pass
+  
+  def throws(self, code, expects, scope={}, tags="throws"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
     except type(expects) as e:
@@ -254,10 +301,25 @@ class TestSuiteOperators(object):
       #traceback.print_exc(file=sys.stdout)
       success = True
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
+  
+  def notthrows(self, code, expects, scope={}, tags="throws"):
+    success, error = True, None
+    tstamp = self.now
+    try:
+      result = eval(code, self.scope, scope)
+    except type(expects) as e:
+      #print(e)
+      #traceback.print_exc(file=sys.stdout)
+      success = False
+      result = error = e
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def truish(self, code, expects=None, scope={}, tags="is-truish"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = bool(result)
@@ -265,10 +327,12 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
   
   def nottruish(self, code, expects=None, scope={}, tags="not-truish"):
     success, error = False, None
+    tstamp = self.now
     try:
       result = eval(code, self.scope, scope)
       success = not result
@@ -276,7 +340,8 @@ class TestSuiteOperators(object):
       #print(e)
       #traceback.print_exc(file=sys.stdout)
       result = error = e
-    return self._test((success, error, result), code, expects, scope, tags)
+    duration = self.now - tstamp
+    return self._test((success, error, result), code, expects, scope, tags, tstamp, duration)
 
 TestSuiteOperators.equals = TestSuiteOperators.eq
 
@@ -309,7 +374,11 @@ class TestSuite(TestSuiteOperators):
   def last_uid(self):
     return UNIQUE_ID
   
-  def _test(self, ser, code, expects, scope, tags):
+  @property
+  def now(self):
+    return time.time()
+  
+  def _test(self, ser, code, expects, scope, tags, tstamp=0, duration=0):
     success, error, result = ser
     if error and self.traceback:
       error = error.with_traceback(sys.exc_info()[2])
@@ -320,7 +389,9 @@ class TestSuite(TestSuiteOperators):
         , "result": result
         , "expects": expects
         , "passed": success
-        , "error": error }
+        , "error": error
+        , "tstamp": tstamp
+        , "duration": duration }
     self.runs.append( item )
     if success:
       self.passes += 1
@@ -329,7 +400,7 @@ class TestSuite(TestSuiteOperators):
     if error:
       self.excepts += 1
     self.count += 1
-    if StopExecution is self._report( **item ):
+    if StopExecution is self.report_item( **item ):
       sys.exit()
     return success
 
@@ -341,7 +412,7 @@ class TestSuite(TestSuiteOperators):
       , runsize=100):
     #print('init', name, tests, parent, scope, traceback, runsize)
     self.name = tag_clean(name)
-    self.tags = seq_unique(parent.tags+(self.name,)) if parent else (self.name,)
+    self.tags = (self.name,)
     self.tests = list(tests) if tests else []
     self.scope = scope if scope else {}
     self.parent = parent or None
@@ -357,12 +428,6 @@ class TestSuite(TestSuiteOperators):
   
   def get_uid(self):
     return unique_id()
-  
-  def clear_runs(self, also_children=True):
-    if also_children:
-      for child in self.children:
-        child.clear_runs()
-    self.runs = []
   
   def query_runs(self, uid, *tags, **kwfilter):
     tags, run = set(tags), None
@@ -381,27 +446,43 @@ class TestSuite(TestSuiteOperators):
   def register(self, child):
     if child not in self.children:
       self.children.append( child )
+      tags = list(self.tags)
+      for tag in child.tags:
+        if tag not in tags:
+          tags.append(tag)
+      self.tags = tuple(tags)
   
-  def add_test(self, methodname, args, kwargs={}):
+  def add(self, methodname, code, *args, **kwargs):
     if hasattr(self.__class__.Operators, methodname):
       raise ValueError("Unsupported methodname {:s}".format(repr(methodname)))
     #print('before append', self.tests)
-    item = (methodname, args, kwargs)
+    item = (methodname, code, args, kwargs)
     #print('item', item)
     self.tests.append( item )
     #print('after append', self.tests)
     return self
   
-  def add_many_test(self, tests):
+  def add_many(self, tests):
     self.tests.extend(tests)
     return self
+  
+  def flush(self, print_summary=True):
+    self.run_tests()
+    self.summary()
+    self.clear_runs()
+  
+  def clear_runs(self, also_children=True):
+    if also_children:
+      for child in self.children:
+        child.clear_runs()
+    self._runs = []
   
   def run_tests(self):
     for child in self.children:
       child.run_tests()
-    for (methodname, args, kwargs) in self.tests:
+    for (methodname, code, args, kwargs) in self.tests:
       #print("run_tests", args, kwargs)
-      getattr(self, methodname)(*args, **kwargs)
+      getattr(self, methodname)(code, *args, **kwargs)
     return self
   
   def summary(self, also_children=True, indent=""):
@@ -413,7 +494,7 @@ class TestSuite(TestSuiteOperators):
     if len(self.children):
       print("{:s}with {:d} children".format(indent, len(self.children)))
     else:
-      print("{:s}with no children".format(indent))
+      print("{:s}no children".format(indent))
     indent += "  "
     for child in self.children:
       child.summary(also_children, indent)
@@ -422,22 +503,26 @@ class TestSuite(TestSuiteOperators):
 FORMATTER_KEYS = ("testsuite", "uid", "status", "code", "result", "expects"
     , "tags", "passed", "error", "extras", "tstamp")
 
-PRINTTESTSUITE_FORMAT = "{:10s} {:3d} {:s} {:-40s} result={:s} expects={:s} tags({:s})"
+PRINTTESTSUITE_FORMAT = " {:5d} {:27s} {:8s} [{:s}] \"{:s}\" expects={:s} result={:s} tags({:s})"
 def PRINTTESTSUITE_FORMATTER(testsuite, uid, status, code, result, expects \
-            , tags, passed, error, tstamp=None, extras={}):
-  tstamp = time.str(tstamp) if type(tstamp) in (float, time.time) else \
-      repr(t_stamp)
-  return PRINTTESTSUITE_FORMAT.format(tstamp, uid, status, code, result, expects, tags)
+            , tags, passed, error, tstamp=0, duration=0, extras={}):
+  ztstamp = str_timestamp(tstamp) if type(tstamp is float) else repr(tstamp)
+  zduration = str_duration(duration) if type(duration is float) else repr(zduraction)
+  ztags = ' '.join(tags) if isinstance(tags, Sequence) else repr(ztags)
+  return PRINTTESTSUITE_FORMAT.format(uid, ztstamp, zduration, status, code \
+      , repr(expects), repr(result), ztags)
 
 
 class WriterTestSuite(TestSuite):
   
+  wroter = None
   formatter = None
   verbosity = 1
   
   def __init__(self, name, tests=None, parent=None, scope={}, traceback=True
       , runsize=100, writer=print, formatter=PRINTTESTSUITE_FORMATTER
       , verbosity=2):
+    self.writer = writer
     self.formatter = formatter
     self.verbosity = verbosity
     super().__init__(name, tests, parent, scope, traceback, runsize)
@@ -447,28 +532,28 @@ class WriterTestSuite(TestSuite):
     pass
   
   def report_item(self, uid, tags='', code='', result=None, expects=None \
-      , passed=0, error=0, tstamp=0, extras={}):
-    line = self._report(self, uid, tags, code, result, expects, passed, error
-        , tstamp, extras)
-    if callable(self._writer):
-      self._writer(line)
+      , passed=0, error=0, tstamp=0, duration=0, extras={}):
+    line = self._report(uid, tags, code, result, expects, passed, error
+        , tstamp, duration, extras)
+    if line is not None and callable(self.writer):
+      self.writer(line)
   
   def _report(self, uid, tags='', code='', result=None, expects=None \
-      , passed=0, error=0, tstamp=0, extras={}):
+      , passed=0, error=0, tstamp=0, duration=0, extras={}):
     if self.verbosity >= 4 or (self.verbosity >= 3 and error) \
         or (self.verbosity >= 2 and not passed) \
         or (self.verbosity >= 1 and not passed and error):
-      status = 'PASS' if passed else 'ERROR' if error else 'FAIL' 
+      status = 'PASS' if passed else 'ERROR' if error else 'FAIL'
       if callable(self.formatter):
         return self.formatter(self, uid, status, code, result, expects \
-            , tags, passed, error, tstamp, extras)
+            , tags, passed, error, tstamp, duration, extras)
       elif type(self.formatter) is str:
         return self.formatter.format_map(dict(kv for kv in zip(FORMATTER_KEYS \
             , (self, uid, status, code, result, expects, tags, passed \
-            , error, tstamp, extras))))
+            , error, tstamp, duration, extras))))
       elif self.formatter is True:
         return (self, uid, status, code, result, expects, tags, passed \
-            , error, tstamp, extras)
+            , error, tstamp, duration, extras)
       elif self.formatter is not None:
         raise TypeError("invalid formatter, expected a callable or format_map" \
             " string but found {:s}".format(repr(self.formatter)))
