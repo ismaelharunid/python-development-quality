@@ -7,6 +7,8 @@ A pdq python test suite
 
 * Add in logging such that WriteTestSuit can dump to a stream.  Please make it so.
 * Currently every test op must prepare is results and propagate them.  To make it less tedious for those creating new ops and also to preserve integrity with the ops, this should be handles such that ops only perform the test.
+* Perf reporting
+* memory usagle and leaks tracking
 
 ## Simple usage
 
