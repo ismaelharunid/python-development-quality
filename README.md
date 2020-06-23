@@ -1,6 +1,13 @@
 # python-development-quality
+
 A pdq python test suite
 
+
+## Yet to be implemented...
+
+* Child test results do not propegate up to their parents, which they should.  Please make it so.
+* Add in logging such that WriteTestSuit can dump to a stream.  Please make it so.
+* Currently every test op must prepare is results and propagate them.  To make it less tedious for those creating new ops and also to preserve integrity with the ops, this should be handles such that ops only perform the test.
 
 ## Simple usage
 
@@ -9,7 +16,7 @@ A pdq python test suite
 >>> 
 >>> test_suite = pdq.WriterTestSuite("root")
 >>> 
->>> ts = pdq.WriterTestSuite("operations", parent=test_suite, verbosity=4)
+>>> ts = pdq.WriterTestSuite("using-asserts", parent=test_suite, verbosity=4)
 >>> 
 >>> assert ts.equals("4", 4), ts.get_last_run()
 >>> assert ts.equals("'four'", "four"), ts.get_last_run()
