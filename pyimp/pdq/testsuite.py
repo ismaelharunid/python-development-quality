@@ -1,6 +1,7 @@
 
 import sys, os, io, re, traceback
 from functools import reduce
+from collections import defaultdict
 
 
 UNIQUE_ID = 0
@@ -91,6 +92,7 @@ class TestSuiteOperators(object):
   
   def eq(self, code, expects, scope={}, tags="equals"):
     success, error = False, None
+    #print("eq", code, expects, scope, tags)
     try:
       result = eval(code, self.scope, scope)
       success = result == expects
@@ -159,7 +161,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = result in expects
+      success = expects in result
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -170,7 +172,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = result not in expects
+      success = expects not in result
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -181,7 +183,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = expects in result
+      success = result in expects
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -192,7 +194,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = expects not in result
+      success = result not in expects
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -225,7 +227,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = subclass(result, expects)
+      success = issubclass(result, expects)
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -236,7 +238,7 @@ class TestSuiteOperators(object):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
-      success = not subclass(result, expects)
+      success = not issubclass(result, expects)
     except Exception as e:
       #print(e)
       #traceback.print_exc(file=sys.stdout)
@@ -254,7 +256,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def true(self, code, expects=None, scope={}, tags="is-true"):
+  def truish(self, code, expects=None, scope={}, tags="is-truish"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -265,7 +267,7 @@ class TestSuiteOperators(object):
       result = error = e
     return self._test((success, error, result), code, expects, scope, tags)
   
-  def false(self, code, expects=None, scope={}, tags="is-false"):
+  def nottruish(self, code, expects=None, scope={}, tags="not-truish"):
     success, error = False, None
     try:
       result = eval(code, self.scope, scope)
@@ -322,10 +324,10 @@ class TestSuite(TestSuiteOperators):
     self.runs.append( item )
     if success:
       self.passes += 1
-    elif error:
-      self.excepts += 1
     else:
       self.fails += 1
+    if error:
+      self.excepts += 1
     self.count += 1
     if StopExecution is self._report( **item ):
       sys.exit()
@@ -335,13 +337,14 @@ class TestSuite(TestSuiteOperators):
       , passed=None, error=None):
     pass
   
-  def __init__(self, name, *tests, scope=None, parent=None, traceback=None
+  def __init__(self, name, tests=None, parent=None, scope={}, traceback=True
       , runsize=100):
+    #print('init', name, tests, parent, scope, traceback, runsize)
     self.name = tag_clean(name)
     self.tags = seq_unique(parent.tags+(self.name,)) if parent else (self.name,)
-    self.tests = list(tests)
-    self.scope = scope
-    self.parent = parent
+    self.tests = list(tests) if tests else []
+    self.scope = scope if scope else {}
+    self.parent = parent or None
     self.traceback = traceback
     self.children = []
     self._runs = LRUStack(maxsize=runsize)
@@ -368,7 +371,7 @@ class TestSuite(TestSuiteOperators):
           and (not tags or tags.intersection(run['tags'])) \
           and all(k in run and run[k] == v for (k,v) in kwfilter.items()))
     except Exception as e:
-      print(uid, tags, kwfilter, run)
+      #print(uid, tags, kwfilter, run)
       raise e
   
   def get_last_run(self):
@@ -382,7 +385,11 @@ class TestSuite(TestSuiteOperators):
   def add_test(self, methodname, args, kwargs={}):
     if hasattr(self.__class__.Operators, methodname):
       raise ValueError("Unsupported methodname {:s}".format(repr(methodname)))
-    self.tests.append( (methodname, args, kwargs) )
+    #print('before append', self.tests)
+    item = (methodname, args, kwargs)
+    #print('item', item)
+    self.tests.append( item )
+    #print('after append', self.tests)
     return self
   
   def add_many_test(self, tests):
@@ -393,23 +400,76 @@ class TestSuite(TestSuiteOperators):
     for child in self.children:
       child.run_tests()
     for (methodname, args, kwargs) in self.tests:
-      getattr(self, methodname)(self, *args, **kwargs)
+      #print("run_tests", args, kwargs)
+      getattr(self, methodname)(*args, **kwargs)
     return self
-
-
-class PrintTestSuite(TestSuite):
   
+  def summary(self, also_children=True, indent=""):
+    print("{:s}Summary for {:s}".format(indent, self.name))
+    indent += "  "
+    print("{:s}[PASS] {:d}/{:d}".format(indent, self.passes, self.count))
+    print("{:s}[FAIL] {:d}/{:d}".format(indent, self.fails, self.count))
+    print("{:s}[ERR]  {:d}/{:d}".format(indent, self.excepts, self.count))
+    if len(self.children):
+      print("{:s}with {:d} children".format(indent, len(self.children)))
+    else:
+      print("{:s}with no children".format(indent))
+    indent += "  "
+    for child in self.children:
+      child.summary(also_children, indent)
+
+
+FORMATTER_KEYS = ("testsuite", "uid", "status", "code", "result", "expects"
+    , "tags", "passed", "error", "extras", "tstamp")
+
+PRINTTESTSUITE_FORMAT = "{:10s} {:3d} {:s} {:-40s} result={:s} expects={:s} tags({:s})"
+def PRINTTESTSUITE_FORMATTER(testsuite, uid, status, code, result, expects \
+            , tags, passed, error, tstamp=None, extras={}):
+  tstamp = time.str(tstamp) if type(tstamp) in (float, time.time) else \
+      repr(t_stamp)
+  return PRINTTESTSUITE_FORMAT.format(tstamp, uid, status, code, result, expects, tags)
+
+
+class WriterTestSuite(TestSuite):
+  
+  formatter = None
   verbosity = 1
   
-  def __init__(self, name, *tests, scope=None, parent=None, traceback=None
+  def __init__(self, name, tests=None, parent=None, scope={}, traceback=True
+      , runsize=100, writer=print, formatter=PRINTTESTSUITE_FORMATTER
       , verbosity=2):
+    self.formatter = formatter
     self.verbosity = verbosity
-    super().__init__(name, *tests, scope, parent, traceback)
+    super().__init__(name, tests, parent, scope, traceback, runsize)
   
-  def _report(self, uid=None, tags=None, code=None, result=None, expects=None \
-      , passed=None, error=None):
+  def report(self, also_children=True, **kwfilters):
+    print("go through all runs and print them,then their children if also_children")
+    pass
+  
+  def report_item(self, uid, tags='', code='', result=None, expects=None \
+      , passed=0, error=0, tstamp=0, extras={}):
+    line = self._report(self, uid, tags, code, result, expects, passed, error
+        , tstamp, extras)
+    if callable(self._writer):
+      self._writer(line)
+  
+  def _report(self, uid, tags='', code='', result=None, expects=None \
+      , passed=0, error=0, tstamp=0, extras={}):
     if self.verbosity >= 4 or (self.verbosity >= 3 and error) \
         or (self.verbosity >= 2 and not passed) \
         or (self.verbosity >= 1 and not passed and error):
-      print(uid, tags, code, result, expects, passed, error)
+      status = 'PASS' if passed else 'ERROR' if error else 'FAIL' 
+      if callable(self.formatter):
+        return self.formatter(self, uid, status, code, result, expects \
+            , tags, passed, error, tstamp, extras)
+      elif type(self.formatter) is str:
+        return self.formatter.format_map(dict(kv for kv in zip(FORMATTER_KEYS \
+            , (self, uid, status, code, result, expects, tags, passed \
+            , error, tstamp, extras))))
+      elif self.formatter is True:
+        return (self, uid, status, code, result, expects, tags, passed \
+            , error, tstamp, extras)
+      elif self.formatter is not None:
+        raise TypeError("invalid formatter, expected a callable or format_map" \
+            " string but found {:s}".format(repr(self.formatter)))
 

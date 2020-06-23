@@ -1,5 +1,5 @@
 
-from .testsuite import TestSuite, PrintTestSuite \
+from .testsuite import TestSuite, WriterTestSuite \
     , TestSuiteOperators, StopExecution
 
 
