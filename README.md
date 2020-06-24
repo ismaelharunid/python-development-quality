@@ -61,14 +61,14 @@ There are a number of features yet to be implemented... (see issues)
 >>> ts.add("notsubclass", "float", type)
 >>> ts.add("istruish", "57")
 >>> ts.add("nottruish", "None")
->>> ts.add("isthrowing", "1/0", ZeroDivisionError("division by zero"))
+>>> ts.add("isthrowing", "1/0", ZeroDivisionError)
 >>> 
 >>> test_suite.run_tests()
 >>> test_suite.summary()
 Summary for root
-  [PASS] this 0/0, total 43/0
+  [PASS] this 0/0, total 44/44
   [FAIL] this 0/0, total 0/0
-  [ERR]  this 0/0, total 1/0
+  [ERR]  this 0/0, total 0/0
   with 2 children
     Summary for using-assert
       [PASS] 22/22
@@ -76,8 +76,8 @@ Summary for root
       [ERR]  0/22
       no children
     Summary for setup-and-run
-      [PASS] 21/22
-      [FAIL] 1/22
-      [ERR]  1/22
+      [PASS] 24/22
+      [FAIL] 0/22
+      [ERR]  0/22
       no children
 ```

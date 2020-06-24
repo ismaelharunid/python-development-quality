@@ -52,7 +52,7 @@ ts.add("issubclass", "int", object)
 ts.add("notsubclass", "float", type)
 ts.add("istruish", "57")
 ts.add("nottruish", "None")
-ts.add("isthrowing", "1/0", ZeroDivisionError("division by zero"))
+ts.add("isthrowing", "1/0", ZeroDivisionError)
 
 test_suite.run_tests()
 test_suite.summary()
