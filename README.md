@@ -67,8 +67,8 @@ There are a number of features yet to be implemented... (see issues)
 >>> test_suite.summary()
 Summary for root
   [PASS] this 0/0, total 44/44
-  [FAIL] this 0/0, total 0/0
-  [ERR]  this 0/0, total 0/0
+  [FAIL] this 0/0, total 0/44
+  [ERR]  this 0/0, total 0/44
   with 2 children
     Summary for using-assert
       [PASS] 22/22
@@ -76,7 +76,7 @@ Summary for root
       [ERR]  0/22
       no children
     Summary for setup-and-run
-      [PASS] 24/22
+      [PASS] 22/22
       [FAIL] 0/22
       [ERR]  0/22
       no children
