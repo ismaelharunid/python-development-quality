@@ -173,11 +173,11 @@ class TestSuite(object):
     if len(self.children):
       passes, fails, errors, count = self.totals
       writeln(out, "{:s}[PASS] this {:d}/{:d}, total {:d}/{:d}" \
-          .format(indent, self.passes, self.count, passes, self.count))
+          .format(indent, self.passes, self.count, passes, count))
       writeln(out, "{:s}[FAIL] this {:d}/{:d}, total {:d}/{:d}" \
-          .format(indent, self.fails, self.count, fails, self.count))
+          .format(indent, self.fails, self.count, fails, count))
       writeln(out, "{:s}[ERR]  this {:d}/{:d}, total {:d}/{:d}" \
-          .format(indent, self.excepts, self.count, errors, self.count))
+          .format(indent, self.excepts, self.count, errors, count))
       writeln(out, "{:s}with {:d} children".format(indent, len(self.children)))
     else:
       writeln(out, "{:s}[PASS] {:d}/{:d}".format(indent, self.passes, self.count))

@@ -85,7 +85,7 @@ class TimeStamps(object):
     self._marks = {}
   
   def str_tstamp(self, dtstamp=None):
-    return self.tstamp(dtstamp).isoformat()
+    return self.__timedate__(dtstamp).isoformat()
 
 # alias for Timestamp
 TimeStamps.tstamp = TimeStamps.__float__

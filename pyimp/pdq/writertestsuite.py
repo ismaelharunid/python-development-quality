@@ -6,16 +6,39 @@ from .testresults import TestResults
 
 
 FORMATTER_KEYS = ("testsuite", "uid", "status", "code", "result", "expects"
-    , "tags", "passed", "error", "extras", "tstamp")
+    , "tags", "passed", "exception", "extras", "tstamp")
 
-PRINTTESTSUITE_FORMAT = " {:5d} {:27s} {:8s} [{:s}] \"{:s}\" expects={:s} result={:s} tags({:s})"
-def PRINTTESTSUITE_FORMATTER(testsuite, uid, status, code, result, expects \
-            , tags, passed, error, tstamp=0, duration=0, extras={}):
-  ztstamp = TSTAMPS.str_tstamp(tstamp) if type(tstamp is float) else str(tstamp)
-  zduration = TSTAMPS.str_since(duration) if type(duration is float) else repr(zduraction)
-  ztags = ' '.join(tags) if isinstance(tags, Sequence) else repr(ztags)
-  return PRINTTESTSUITE_FORMAT.format(uid, ztstamp, zduration, status, code \
-      , repr(expects), repr(result), ztags)
+LINE_FORMAT = " {uid:5s} {tstamp:27s} {tduration:8s} [{status:s}] \"{code:s}\" args={args:s} result={result:s} tags({tags:s})"
+EXTENDED_LINE_FORMAT = "+      {:s}"
+def LINE_FORMATTER(mapping):
+  lm = dict(mapping)
+  tstamp = TSTAMPS.str_tstamp(lm.pop("tstamp")) \
+      if type(lm["tstamp"] is float) else \
+      str(lm.pop("tstamp"))
+  tduration = "{:9.6f}".format(lm.pop("tduration")) \
+      if type(lm["tduration"] is float) else \
+      repr(lm.pop("tduration"))
+  tags = ' '.join(lm.pop("tags")) if isinstance(lm["tags"], Sequence) else \
+      repr(lm.pop("tags"))
+  for k in lm.keys():
+    lm[k] = str(lm[k])
+  lm['tstamp'] = tstamp
+  lm['tduration'] = tduration
+  lm['tags'] = tags
+  #print(LINE_FORMAT)
+  #print(lm)
+  line = LINE_FORMAT.format(**lm)
+  if "extras" in mapping:
+    extras = mapping["extras"]
+    lines = [ line ]
+    if isinstance(extras, Sequence):
+      lines += list(EXTENDED_LINE_FORMAT.format(str(x)) for x in extras)
+    elif isinstance(extras, Mapping):
+      lines += list(EXTENDED_LINE_FORMAT \
+          .format("{:s)=(:s)".format(repr(k), repr(x)) \
+          for (k,x) in extras.items()))
+    line = '\n'.join(lines)
+  return line
 
 
 class WriterTestSuite(SimpleTestSuite):
@@ -25,7 +48,7 @@ class WriterTestSuite(SimpleTestSuite):
   verbosity = 1
   
   def __init__(self, name, tests=None, parent=None, scope={}, traceback=True
-      , runsize=100, writer=print, formatter=PRINTTESTSUITE_FORMATTER
+      , runsize=100, writer=print, formatter=LINE_FORMATTER
       , verbosity=2):
     self.writer = writer
     self.formatter = formatter
@@ -33,33 +56,35 @@ class WriterTestSuite(SimpleTestSuite):
     super().__init__(name, tests, parent, scope, traceback, runsize)
   
   def report(self, also_children=True, **kwfilters):
-    print("go through all runs and print them,then their children if also_children")
-    pass
+    if callable(self.writer):
+      for run in self._runs:
+        self.report_item(run, **kwfilters)
+      if also_children:
+        for child in self.children:
+          child.report(also_children, **kwfilters)
   
-  def report_item(self, uid, tags='', code='', result=None, expects=None \
-      , passed=0, error=0, tstamp=0, duration=0, extras={}):
-    line = self._report(uid, tags, code, result, expects, passed, error
-        , tstamp, duration, extras)
-    if line is not None and callable(self.writer):
-      self.writer(line)
+  def report_item(self, run, **kwfilters):
+    if (self.verbosity >= 4 or (self.verbosity >= 3 and run.exception) \
+        or (self.verbosity >= 2 and not run.passed) \
+        or (self.verbosity >= 1 and not run.passed and run.exception)) \
+        and callable(self.writer):
+      line = self._report(run)
+      if line is not None:
+        self.writer(line)
   
-  def _report(self, uid, tags='', code='', result=None, expects=None \
-      , passed=0, error=0, tstamp=0, duration=0, extras={}):
-    if self.verbosity >= 4 or (self.verbosity >= 3 and error) \
-        or (self.verbosity >= 2 and not passed) \
-        or (self.verbosity >= 1 and not passed and error):
-      status = 'PASS' if passed else 'ERROR' if error else 'FAIL'
-      if callable(self.formatter):
-        return self.formatter(self, uid, status, code, result, expects \
-            , tags, passed, error, tstamp, duration, extras)
-      elif type(self.formatter) is str:
-        return self.formatter.format_map(dict(kv for kv in zip(FORMATTER_KEYS \
-            , (self, uid, status, code, result, expects, tags, passed \
-            , error, tstamp, duration, extras))))
-      elif self.formatter is True:
-        return (self, uid, status, code, result, expects, tags, passed \
-            , error, tstamp, duration, extras)
-      elif self.formatter is not None:
-        raise TypeError("invalid formatter, expected a callable or format_map" \
-            " string but found {:s}".format(repr(self.formatter)))
+  def _report(self, run, **kwfilters):
+    mapping = vars(run)
+    mapping["status"] = 'PASS' if run.passed else \
+        'ERROR' if run.exception else \
+        'FAIL'
+    #print(mapping)
+    if callable(self.formatter):
+      return self.formatter(mapping)
+    elif type(self.formatter) is str:
+      return self.formatter.format(mapping)
+    elif self.formatter is True:
+      return mapping
+    elif self.formatter is not None:
+      raise TypeError("invalid formatter, expected a callable or format_map" \
+          " string but found {:s}".format(repr(self.formatter)))
 

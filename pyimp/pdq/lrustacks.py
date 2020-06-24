@@ -4,7 +4,7 @@ class LRUStack(list):
   
   maxsize   = None
   
-  def __init__(self, initializer=None, maxsize=100):
+  def __init__(self, initializer=None, maxsize=500):
     self.maxsize = maxsize
     if initializer is None:
       super().__init__()

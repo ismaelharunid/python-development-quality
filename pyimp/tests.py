@@ -4,7 +4,7 @@ import pdq
 
 test_suite = pdq.WriterTestSuite("root")
 
-ts = pdq.WriterTestSuite("using-assert", parent=test_suite, verbosity=4)
+ts = pdq.WriterTestSuite("using-assert", parent=test_suite)
 
 assert ts.isequal("4", 4), ts.get_last_run()
 assert ts.isequal("'four'", "four"), ts.get_last_run()
@@ -29,7 +29,7 @@ assert ts.istruish("57"), ts.get_last_run()
 assert ts.nottruish("None"), ts.get_last_run()
 assert ts.isthrowing("1/0", ZeroDivisionError), repr(ts.get_last_run())
 
-ts = pdq.WriterTestSuite("setup-and-run", parent=test_suite)
+ts = pdq.WriterTestSuite("setup-and-run", parent=test_suite, verbosity=4)
 
 ts.add("isequal", "4", 4)
 ts.add("isequal", "'four'", "four")
@@ -55,5 +55,7 @@ ts.add("nottruish", "None")
 ts.add("isthrowing", "1/0", ZeroDivisionError)
 
 test_suite.run_tests()
+test_suite.report(True)
 test_suite.summary()
+
 

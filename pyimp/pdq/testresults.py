@@ -28,6 +28,19 @@ class TestResults(object):
     self.tstamp = tstamp or TSTAMPS.now
     self.uid = uid or testsuite.get_uid()
   
+  def __iter__(self):
+    yield self.testsuite
+    yield self.uid
+    yield self.code
+    yield self.args
+    yield self.tags
+    yield self.scope
+    yield self.tstamp
+    yield self.tduration
+    yield self.passed
+    yield self.result
+    yield self.exception
+  
   def __repr__(self):
     return self.__str__()
   
