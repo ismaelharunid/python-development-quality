@@ -55,7 +55,7 @@ ts.add("nottruish", "None")
 ts.add("isthrowing", "1/0", ZeroDivisionError)
 
 test_suite.run_tests()
-test_suite.report(True)
+test_suite.report()
 test_suite.summary()
 
 

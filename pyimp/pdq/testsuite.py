@@ -22,6 +22,8 @@ class TestSuite(object):
    
   last_uid = None
   name = None
+  setups = None
+  teardowns = None
   tests = None
   scope = None
   parent = None
@@ -75,6 +77,7 @@ class TestSuite(object):
     self.last_uid = None
     self.name = tag_clean(name)
     self.tags = (self.name,)
+    self.setups, self.teardowns = [], []
     self.tests = list(tests) if tests else []
     self.scope = scope if scope else {}
     self.parent = parent or None
@@ -119,6 +122,14 @@ class TestSuite(object):
           tags.append(tag)
       self.tags = tuple(tags)
   
+  def add_setup(self, code):
+    self.setups.append(code)
+    return self
+  
+  def add_teardown(self, code):
+    selfteardowns.append(code)
+    return self
+  
   def add(self, methodname, code, *args, **kwargs):
     if hasattr(self.__class__.Operators, methodname):
       raise ValueError("Unsupported methodname {:s}".format(repr(methodname)))
@@ -160,11 +171,25 @@ class TestSuite(object):
     self._runs = []
   
   def run_tests(self):
+    for setup in self.setups:
+      try:
+        exec(setup, self.scope)
+      except Exception as exc:
+        print("Error in setup code:")
+        print(code)
+        raise exc
     for child in self.children:
       child.run_tests()
     for (methodname, code, args, kwargs) in self.tests:
       #print("run_tests", args, kwargs)
       getattr(self, methodname)(code, *args, **kwargs)
+    for teardown in self.teardowns:
+      try:
+        exec(teardown, self.scope)
+      except Exception as exc:
+        print("Error in teardown code:")
+        print(code)
+        raise exc
     return self
   
   def summary(self, also_children=True, out=sys.stdout, indent=""):
@@ -187,5 +212,4 @@ class TestSuite(object):
     indent += "  "
     for child in self.children:
       child.summary(also_children, out, indent)
-  
 

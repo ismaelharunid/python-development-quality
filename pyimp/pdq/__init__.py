@@ -8,7 +8,7 @@ from .events import EventListener, Event, StopPropagation
 
 
 try:
-  execfile = lambda fpath: exec(open(fpath).read())
+  execfile = lambda fpath, scope={}: exec(open(fpath).read(), scope)
 except:
   pass
 

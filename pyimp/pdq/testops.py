@@ -278,4 +278,7 @@ TestSuiteOperators.isge = TestSuiteOperators.notless
 TestSuiteOperators.isgt = TestSuiteOperators.ismore
 TestSuiteOperators.isle = TestSuiteOperators.notmore
 
+TestSuiteOperators.israising = TestSuiteOperators.isthrowing
+TestSuiteOperators.notraising = TestSuiteOperators.notthrowing
+
 

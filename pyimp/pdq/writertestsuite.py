@@ -12,6 +12,7 @@ LINE_FORMAT = " {uid:5s} {tstamp:27s} {tduration:8s} [{status:s}] \"{code:s}\" a
 EXTENDED_LINE_FORMAT = "+      {:s}"
 def LINE_FORMATTER(mapping):
   lm = dict(mapping)
+  
   tstamp = TSTAMPS.str_tstamp(lm.pop("tstamp")) \
       if type(lm["tstamp"] is float) else \
       str(lm.pop("tstamp"))
@@ -22,14 +23,19 @@ def LINE_FORMATTER(mapping):
       repr(lm.pop("tags"))
   for k in lm.keys():
     lm[k] = str(lm[k])
+  lm['result'] = repr(lm['result'])
   lm['tstamp'] = tstamp
   lm['tduration'] = tduration
   lm['tags'] = tags
   #print(LINE_FORMAT)
   #print(lm)
   line = LINE_FORMAT.format(**lm)
-  if "extras" in mapping:
-    extras = mapping["extras"]
+  if mapping["exception"]:
+    lines = [ line ]
+    lines.append( EXTENDED_LINE_FORMAT.format("exception="+repr(lm["exception"])) )
+    line = '\n'.join(lines)
+  if "extras" in lm:
+    extras = lm["extras"]
     lines = [ line ]
     if isinstance(extras, Sequence):
       lines += list(EXTENDED_LINE_FORMAT.format(str(x)) for x in extras)

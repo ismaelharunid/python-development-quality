@@ -49,40 +49,41 @@ class EventListener(object):
   _indextypes     = None
   _indexes        = None
   
-  def __init__(self, indexes=None, parent=None):
-    if not indexes:
-      indexes = []
-    elif type(indexes) is str:
-      indexes = list(key for key in (key.strip() \
-          for key in indexes.split(',')) if key)
-    elif not isinstance(indexes, Sequence) \
-        or any(type(name) is not str for name in indexes):
-      raise ValueError("indexes expects a commas sperator str, " \
+  def __init__(self, types=None, parent=None):
+    if not types:
+      types = []
+    elif type(types) is str:
+      types = list(key for key in (key.strip() \
+          for key in types.split(',')) if key)
+    elif isinstance(types, Sequence) \
+        and all(type(name) is str for name in types):
+      types = list(types)
+    else:
+      raise ValueError("types expects a commas sperator str, " \
           "sequence of eventtypes or None but found {:s}" \
           .format(repr(name)))
-    else:
-      indexes = list(indexes)
     indextypes = []
     self._parent = parent or self
     self._events = []
     self.indexes = {}
     self.indexes['type'] = []
     indextypes.append( 'type' )
-    if 'type' in indexes:
-      indexes.remove('type')
-    for name in indexes:
+    if 'type' in types:
+      types.remove('type')
+    for name in types:
       if name in indextypes:
         continue
       indextypes.append( name )
       self.indexes[name] = []
-      indexes.remove(name)
-    self.indextypes = tuple(indextypes)
+      types.remove(name)
+    self._indextypes = tuple(indextypes)
   
   def add(self, event):
-    if not ininstance(event, Event):
+    if not isinstance(event, Event):
       raise ValueError("event expects an Event instance but found {:s}" \
           .format(repr(event)))
-    eventype = event.type
+    print(event)
+    eventtype = event.type
     if eventtype not in self._indextypes:
       raise ValueError("unsupported eventtype {:s}" \
           .format(repr(eventtype)))
@@ -107,7 +108,7 @@ class EventListener(object):
       if not isinstance(events, Sequence):
         events = (events,)
       for event in events:
-        if not ininstance(event, Event):
+        if not isinstance(event, Event):
           raise ValueError("event expects an Event instance but found {:s}" \
               .format(repr(event)))
         for evs in self._indexes.values():
@@ -145,7 +146,7 @@ class EventListener(object):
       if not isinstance(events, Sequence):
         events = (events,)
       for event in events:
-        if not ininstance(event, Event):
+        if not isinstance(event, Event):
           raise ValueError("event expects an Event instance but found {:s}" \
               .format(repr(event)))
         for evs in self._indexes.values():
@@ -176,11 +177,11 @@ class EventListener(object):
       if occurs <= 0:
         self.remove(events=event)
   
-  def on(self, eventype, callback, options={}, occurs=None
+  def on(self, eventtype, callback, options={}, occurs=None
       , *extras, **kwextras):
-    self.add( Event(eventype, callback, options={}, occurs=None
+    self.add( Event(eventtype, callback, options={}, occurs=None
       , *extras, **kwextras) )
   
-  def once(self, eventype, callback, options={}, *extras, **kwextras):
-    self.add( Event(eventype, callback, options={}, occurs=1
+  def once(self, eventtype, callback, options={}, *extras, **kwextras):
+    self.add( Event(eventtype, callback, options={}, occurs=1
       , *extras, **kwextras) )
